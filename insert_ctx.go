@@ -6,7 +6,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/lann/builder"
+	"squirrel/builder"
 )
 
 func (d *insertData) ExecContext(ctx context.Context) (sql.Result, error) {

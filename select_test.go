@@ -80,6 +80,13 @@ func TestSelectBuilderPlaceholders(t *testing.T) {
 	assert.Equal(t, "SELECT test WHERE x = $1 AND y = $2", sql)
 }
 
+func TestSelect(t *testing.T) {
+	b := Select().From("DB").Columns("*")
+
+	sql, _, _ := b.ToSql()
+	assert.Equal(t, "SELECT * FROM DB", sql)
+}
+
 func TestSelectBuilderRunners(t *testing.T) {
 	db := &DBStub{}
 	b := Select("test").RunWith(db)

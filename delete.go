@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lann/builder"
+	"squirrel/builder"
 )
 
 type deleteData struct {
@@ -89,64 +89,74 @@ func init() {
 
 // PlaceholderFormat sets PlaceholderFormat (e.g. Question or Dollar) for the
 // query.
-func (b DeleteBuilder) PlaceholderFormat(f PlaceholderFormat) DeleteBuilder {
-	return builder.Set(b, "PlaceholderFormat", f).(DeleteBuilder)
+func (b *DeleteBuilder) PlaceholderFormat(f PlaceholderFormat) *DeleteBuilder {
+	*b = builder.Set(*b, "PlaceholderFormat", f).(DeleteBuilder)
+	return b
 }
 
 // Runner methods
 
 // RunWith sets a Runner (like database/sql.DB) to be used with e.g. Exec.
-func (b DeleteBuilder) RunWith(runner BaseRunner) DeleteBuilder {
-	return setRunWith(b, runner).(DeleteBuilder)
+func (b *DeleteBuilder) RunWith(runner BaseRunner) *DeleteBuilder {
+	*b = setRunWith(*b, runner).(DeleteBuilder)
+	return b
 }
 
 // Exec builds and Execs the query with the Runner set by RunWith.
-func (b DeleteBuilder) Exec() (sql.Result, error) {
-	data := builder.GetStruct(b).(deleteData)
+func (b *DeleteBuilder) Exec() (sql.Result, error) {
+	data := builder.GetStruct(*b).(deleteData)
 	return data.Exec()
 }
 
 // SQL methods
 
 // ToSql builds the query into a SQL string and bound args.
-func (b DeleteBuilder) ToSql() (string, []interface{}, error) {
-	data := builder.GetStruct(b).(deleteData)
+func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
+	a := *b
+	data := builder.GetStruct(a).(deleteData)
 	return data.ToSql()
 }
 
 // Prefix adds an expression to the beginning of the query
-func (b DeleteBuilder) Prefix(sql string, args ...interface{}) DeleteBuilder {
-	return builder.Append(b, "Prefixes", Expr(sql, args...)).(DeleteBuilder)
+func (b *DeleteBuilder) Prefix(sql string, args ...interface{}) *DeleteBuilder {
+	*b = builder.Append(*b, "Prefixes", Expr(sql, args...)).(DeleteBuilder)
+	return b
 }
 
 // From sets the table to be deleted from.
-func (b DeleteBuilder) From(from string) DeleteBuilder {
-	return builder.Set(b, "From", from).(DeleteBuilder)
+func (b *DeleteBuilder) From(from string) *DeleteBuilder {
+	*b = builder.Set(*b, "From", from).(DeleteBuilder)
+	return b
 }
 
 // Where adds WHERE expressions to the query.
 //
 // See SelectBuilder.Where for more information.
-func (b DeleteBuilder) Where(pred interface{}, args ...interface{}) DeleteBuilder {
-	return builder.Append(b, "WhereParts", newWherePart(pred, args...)).(DeleteBuilder)
+func (b *DeleteBuilder) Where(pred interface{}, args ...interface{}) *DeleteBuilder {
+	*b = builder.Append(*b, "WhereParts", newWherePart(pred, args...)).(DeleteBuilder)
+	return b
 }
 
 // OrderBy adds ORDER BY expressions to the query.
-func (b DeleteBuilder) OrderBy(orderBys ...string) DeleteBuilder {
-	return builder.Extend(b, "OrderBys", orderBys).(DeleteBuilder)
+func (b *DeleteBuilder) OrderBy(orderBys ...string) *DeleteBuilder {
+	*b = builder.Extend(*b, "OrderBys", orderBys).(DeleteBuilder)
+	return b
 }
 
 // Limit sets a LIMIT clause on the query.
-func (b DeleteBuilder) Limit(limit uint64) DeleteBuilder {
-	return builder.Set(b, "Limit", fmt.Sprintf("%d", limit)).(DeleteBuilder)
+func (b *DeleteBuilder) Limit(limit uint64) *DeleteBuilder {
+	*b = builder.Set(*b, "Limit", fmt.Sprintf("%d", limit)).(DeleteBuilder)
+	return b
 }
 
 // Offset sets a OFFSET clause on the query.
-func (b DeleteBuilder) Offset(offset uint64) DeleteBuilder {
-	return builder.Set(b, "Offset", fmt.Sprintf("%d", offset)).(DeleteBuilder)
+func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
+	*b = builder.Set(*b, "Offset", fmt.Sprintf("%d", offset)).(DeleteBuilder)
+	return b
 }
 
 // Suffix adds an expression to the end of the query
-func (b DeleteBuilder) Suffix(sql string, args ...interface{}) DeleteBuilder {
-	return builder.Append(b, "Suffixes", Expr(sql, args...)).(DeleteBuilder)
+func (b *DeleteBuilder) Suffix(sql string, args ...interface{}) *DeleteBuilder {
+	*b = builder.Append(*b, "Suffixes", Expr(sql, args...)).(DeleteBuilder)
+	return b
 }

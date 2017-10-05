@@ -1,28 +1,32 @@
 package squirrel
 
-import "github.com/lann/builder"
+import "squirrel/builder"
 
 // StatementBuilderType is the type of StatementBuilder.
 type StatementBuilderType builder.Builder
 
-// Select returns a SelectBuilder for this StatementBuilderType.
-func (b StatementBuilderType) Select(columns ...string) SelectBuilder {
-	return SelectBuilder(b).Columns(columns...)
+// Select returns a SelectBuilder for this StatementBuilderType.  (StatementBuilderType is a pointer to EmptyBuilder)
+func (b StatementBuilderType) Select(columns ...string) *SelectBuilder {
+	a := SelectBuilder(b)
+	return a.Columns(columns...)
 }
 
 // Insert returns a InsertBuilder for this StatementBuilderType.
-func (b StatementBuilderType) Insert(into string) InsertBuilder {
-	return InsertBuilder(b).Into(into)
+func (b StatementBuilderType) Insert(into string) *InsertBuilder {
+	data := InsertBuilder(b)
+	return data.Into(into)
 }
 
 // Update returns a UpdateBuilder for this StatementBuilderType.
-func (b StatementBuilderType) Update(table string) UpdateBuilder {
-	return UpdateBuilder(b).Table(table)
+func (b StatementBuilderType) Update(table string) *UpdateBuilder {
+	data := UpdateBuilder(b)
+	return data.Table(table)
 }
 
 // Delete returns a DeleteBuilder for this StatementBuilderType.
-func (b StatementBuilderType) Delete(from string) DeleteBuilder {
-	return DeleteBuilder(b).From(from)
+func (b StatementBuilderType) Delete(from string) *DeleteBuilder {
+	data := DeleteBuilder(b)
+	return data.From(from)
 }
 
 // PlaceholderFormat sets the PlaceholderFormat field for any child builders.
@@ -36,33 +40,38 @@ func (b StatementBuilderType) RunWith(runner BaseRunner) StatementBuilderType {
 }
 
 // StatementBuilder is a parent builder for other builders, e.g. SelectBuilder.
-var StatementBuilder = StatementBuilderType(builder.EmptyBuilder).PlaceholderFormat(Question)
+//var StatementBuilder = StatementBuilderType(builder.EmptyBuilder).PlaceholderFormat(Question)
+
+var (
+	NewStatementBuilder = StatementBuilderType(builder.EmptyBuilder).PlaceholderFormat(Question)
+	StatementBuilder    = &NewStatementBuilder
+)
 
 // Select returns a new SelectBuilder, optionally setting some result columns.
 //
 // See SelectBuilder.Columns.
-func Select(columns ...string) SelectBuilder {
+func Select(columns ...string) *SelectBuilder {
 	return StatementBuilder.Select(columns...)
 }
 
 // Insert returns a new InsertBuilder with the given table name.
 //
 // See InsertBuilder.Into.
-func Insert(into string) InsertBuilder {
+func Insert(into string) *InsertBuilder {
 	return StatementBuilder.Insert(into)
 }
 
 // Update returns a new UpdateBuilder with the given table name.
 //
 // See UpdateBuilder.Table.
-func Update(table string) UpdateBuilder {
+func Update(table string) *UpdateBuilder {
 	return StatementBuilder.Update(table)
 }
 
 // Delete returns a new DeleteBuilder with the given table name.
 //
 // See DeleteBuilder.Table.
-func Delete(from string) DeleteBuilder {
+func Delete(from string) *DeleteBuilder {
 	return StatementBuilder.Delete(from)
 }
 

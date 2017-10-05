@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/lann/builder"
+	"squirrel/builder"
+
 	"github.com/stretchr/testify/assert"
 )
 

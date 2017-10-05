@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/lann/builder"
+	"squirrel/builder"
 )
 
 type insertData struct {
@@ -111,11 +111,18 @@ func (d *insertData) appendValuesToSQL(w io.Writer, args []interface{}) ([]inter
 	for r, row := range d.Values {
 		valueStrings := make([]string, len(row))
 		for v, val := range row {
-			e, isExpr := val.(expr)
-			if isExpr {
-				valueStrings[v] = e.sql
-				args = append(args, e.args...)
-			} else {
+			switch typedVal := val.(type) {
+			case Keyworder:
+				valueStrings[v] = typedVal.Keyword()
+			case Sqlizer:
+				valSql, valArgs, err := typedVal.ToSql()
+				if err != nil {
+					return args, err
+				}
+
+				valueStrings[v] = valSql
+				args = append(args, valArgs...)
+			default:
 				valueStrings[v] = "?"
 				args = append(args, val)
 			}
@@ -157,81 +164,89 @@ func init() {
 
 // PlaceholderFormat sets PlaceholderFormat (e.g. Question or Dollar) for the
 // query.
-func (b InsertBuilder) PlaceholderFormat(f PlaceholderFormat) InsertBuilder {
-	return builder.Set(b, "PlaceholderFormat", f).(InsertBuilder)
+func (b *InsertBuilder) PlaceholderFormat(f PlaceholderFormat) *InsertBuilder {
+	*b = builder.Set(*b, "PlaceholderFormat", f).(InsertBuilder)
+	return b
 }
 
 // Runner methods
 
 // RunWith sets a Runner (like database/sql.DB) to be used with e.g. Exec.
-func (b InsertBuilder) RunWith(runner BaseRunner) InsertBuilder {
-	return setRunWith(b, runner).(InsertBuilder)
+func (b *InsertBuilder) RunWith(runner BaseRunner) *InsertBuilder {
+	*b = setRunWith(*b, runner).(InsertBuilder)
+	return b
 }
 
 // Exec builds and Execs the query with the Runner set by RunWith.
-func (b InsertBuilder) Exec() (sql.Result, error) {
-	data := builder.GetStruct(b).(insertData)
+func (b *InsertBuilder) Exec() (sql.Result, error) {
+	data := builder.GetStruct(*b).(insertData)
 	return data.Exec()
 }
 
 // Query builds and Querys the query with the Runner set by RunWith.
-func (b InsertBuilder) Query() (*sql.Rows, error) {
-	data := builder.GetStruct(b).(insertData)
+func (b *InsertBuilder) Query() (*sql.Rows, error) {
+	data := builder.GetStruct(*b).(insertData)
 	return data.Query()
 }
 
 // QueryRow builds and QueryRows the query with the Runner set by RunWith.
-func (b InsertBuilder) QueryRow() RowScanner {
-	data := builder.GetStruct(b).(insertData)
+func (b *InsertBuilder) QueryRow() RowScanner {
+	data := builder.GetStruct(*b).(insertData)
 	return data.QueryRow()
 }
 
 // Scan is a shortcut for QueryRow().Scan.
-func (b InsertBuilder) Scan(dest ...interface{}) error {
+func (b *InsertBuilder) Scan(dest ...interface{}) error {
 	return b.QueryRow().Scan(dest...)
 }
 
 // SQL methods
 
 // ToSql builds the query into a SQL string and bound args.
-func (b InsertBuilder) ToSql() (string, []interface{}, error) {
-	data := builder.GetStruct(b).(insertData)
+func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
+	data := builder.GetStruct(*b).(insertData)
 	return data.ToSql()
 }
 
 // Prefix adds an expression to the beginning of the query
-func (b InsertBuilder) Prefix(sql string, args ...interface{}) InsertBuilder {
-	return builder.Append(b, "Prefixes", Expr(sql, args...)).(InsertBuilder)
+func (b *InsertBuilder) Prefix(sql string, args ...interface{}) *InsertBuilder {
+	*b = builder.Append(*b, "Prefixes", Expr(sql, args...)).(InsertBuilder)
+	return b
 }
 
 // Options adds keyword options before the INTO clause of the query.
-func (b InsertBuilder) Options(options ...string) InsertBuilder {
-	return builder.Extend(b, "Options", options).(InsertBuilder)
+func (b *InsertBuilder) Options(options ...string) *InsertBuilder {
+	*b = builder.Extend(*b, "Options", options).(InsertBuilder)
+	return b
 }
 
 // Into sets the INTO clause of the query.
-func (b InsertBuilder) Into(from string) InsertBuilder {
-	return builder.Set(b, "Into", from).(InsertBuilder)
+func (b *InsertBuilder) Into(from string) *InsertBuilder {
+	*b = builder.Set(*b, "Into", from).(InsertBuilder)
+	return b
 }
 
 // Columns adds insert columns to the query.
-func (b InsertBuilder) Columns(columns ...string) InsertBuilder {
-	return builder.Extend(b, "Columns", columns).(InsertBuilder)
+func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
+	*b = builder.Extend(*b, "Columns", columns).(InsertBuilder)
+	return b
 }
 
 // Values adds a single row's values to the query.
-func (b InsertBuilder) Values(values ...interface{}) InsertBuilder {
-	return builder.Append(b, "Values", values).(InsertBuilder)
+func (b *InsertBuilder) Values(values ...interface{}) *InsertBuilder {
+	*b = builder.Append(*b, "Values", values).(InsertBuilder)
+	return b
 }
 
 // Suffix adds an expression to the end of the query
-func (b InsertBuilder) Suffix(sql string, args ...interface{}) InsertBuilder {
-	return builder.Append(b, "Suffixes", Expr(sql, args...)).(InsertBuilder)
+func (b *InsertBuilder) Suffix(sql string, args ...interface{}) *InsertBuilder {
+	*b = builder.Append(*b, "Suffixes", Expr(sql, args...)).(InsertBuilder)
+	return b
 }
 
 // SetMap set columns and values for insert builder from a map of column name and value
 // note that it will reset all previous columns and values was set if any
-func (b InsertBuilder) SetMap(clauses map[string]interface{}) InsertBuilder {
+func (b *InsertBuilder) SetMap(clauses map[string]interface{}) *InsertBuilder {
 	cols := make([]string, 0, len(clauses))
 	vals := make([]interface{}, 0, len(clauses))
 	for col, val := range clauses {
@@ -239,13 +254,41 @@ func (b InsertBuilder) SetMap(clauses map[string]interface{}) InsertBuilder {
 		vals = append(vals, val)
 	}
 
-	b = builder.Set(b, "Columns", cols).(InsertBuilder)
-	b = builder.Set(b, "Values", [][]interface{}{vals}).(InsertBuilder)
+	*b = builder.Set(*b, "Columns", cols).(InsertBuilder)
+	*b = builder.Extend(*b, "Values", []interface{}{vals}).(InsertBuilder)
 	return b
 }
 
 // Select set Select clause for insert query
 // If Values and Select are used, then Select has higher priority
-func (b InsertBuilder) Select(sb SelectBuilder) InsertBuilder {
-	return builder.Set(b, "Select", &sb).(InsertBuilder)
+func (b *InsertBuilder) Select(sb *SelectBuilder) *InsertBuilder {
+	*b = builder.Set(*b, "Select", sb).(InsertBuilder)
+	return b
+}
+
+// AddMap sets values from given map of column=>value
+// If no column has been set yet, AddMap will act like SetMap
+// If given map contains columns that
+func (b *InsertBuilder) AddMap(clauses map[string]interface{}) *InsertBuilder {
+	cols := make([]string, 0, len(clauses))
+	vals := make([]interface{}, 0, len(clauses))
+	for col, val := range clauses {
+		cols = append(cols, col)
+		vals = append(vals, val)
+	}
+
+	columns, ok := builder.Get(*b, "Columns")
+	if !ok {
+		*b = builder.Set(*b, "Columns", cols).(InsertBuilder)
+		*b = builder.Extend(*b, "Values", []interface{}{vals}).(InsertBuilder)
+		return b
+	}
+
+	columnsNames, _ := columns.([]string)
+	newValues := make([]interface{}, 0, len(columnsNames))
+	for _, column := range columnsNames {
+		newValues = append(newValues, clauses[column])
+	}
+	*b = builder.Extend(*b, "Values", []interface{}{newValues}).(InsertBuilder)
+	return b
 }

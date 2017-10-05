@@ -90,3 +90,56 @@ func TestInsertBuilderSelect(t *testing.T) {
 	expectedArgs := []interface{}{1}
 	assert.Equal(t, expectedArgs, args)
 }
+
+func TestInsertBuilderUseDefault(t *testing.T) {
+	b := Insert("table").SetMap(Eq{"`field1`": 1, "`field2`": KeywordDefault})
+
+	sql, args, err := b.ToSql()
+	assert.NoError(t, err)
+
+	expect := []string{"INSERT INTO table (`field1`,`field2`) VALUES (?,DEFAULT)", "INSERT INTO table (`field2`,`field1`) VALUES (DEFAULT,?)"}
+	if sql != expect[0] && sql != expect[1] {
+		t.Errorf("expected one of %#v, got %#v", expect, sql)
+	}
+
+	expectedArgs := []interface{}{1}
+	assert.Equal(t, expectedArgs, args)
+}
+
+func TestInsertBuilder_SetMap(t *testing.T) {
+	b := Insert("table").SetMap(Eq{"`field1`": 11, "`field2`": 12})
+
+	sql, _, err := b.ToSql()
+	assert.NoError(t, err)
+
+	expect := []string{"INSERT INTO table (`field1`,`field2`) VALUES (?,?)", "INSERT INTO table (`field2`,`field1`) VALUES (?,?)"}
+	if sql != expect[0] && sql != expect[1] {
+		t.Errorf("expected one of %#v, got %#v", expect, sql)
+	}
+}
+
+func TestInsertBuilder_AddMap(t *testing.T) {
+	b := Insert("table").AddMap(Eq{"`field1`": 11, "`field2`": 12})
+	b.AddMap(Eq{"`field2`": 22, "`field1`": 21})
+
+	sql, _, err := b.ToSql()
+	assert.NoError(t, err)
+
+	expect := []string{"INSERT INTO table (`field1`,`field2`) VALUES (?,?),(?,?)", "INSERT INTO table (`field2`,`field1`) VALUES (?,?),(?,?)"}
+	if sql != expect[0] && sql != expect[1] {
+		t.Errorf("expected one of %#v, got %#v", expect, sql)
+	}
+}
+
+func TestInsertBuilder_SetMapAddMap(t *testing.T) {
+	b := Insert("table").SetMap(Eq{"`field1`": 11, "`field2`": 12})
+	b.AddMap(Eq{"`field2`": 22, "`field1`": 21})
+
+	sql, _, err := b.ToSql()
+	assert.NoError(t, err)
+
+	expect := []string{"INSERT INTO table (`field1`,`field2`) VALUES (?,?),(?,?)", "INSERT INTO table (`field2`,`field1`) VALUES (?,?),(?,?)"}
+	if sql != expect[0] && sql != expect[1] {
+		t.Errorf("expected one of %#v, got %#v", expect, sql)
+	}
+}

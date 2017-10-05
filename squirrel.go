@@ -9,8 +9,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lann/builder"
+	"squirrel/builder"
 )
+
+// keyword wraps "string" type and implements Keyworder interface
+type keyword string
+
+// Keyword implements interface Keyworder
+func (k keyword) Keyword() string { return string(k) }
+
+// KeywordDefault is a value used by default in INSERT query if no data found in
+// incoming map of column=>data
+// Keyword "DEFAULT" enforces MySQL to use column's default value
+var KeywordDefault keyword = "DEFAULT"
 
 // Sqlizer is the interface that wraps the ToSql method.
 //
@@ -18,6 +29,14 @@ import (
 // as passed to e.g. database/sql.Exec. It can also return an error.
 type Sqlizer interface {
 	ToSql() (string, []interface{}, error)
+}
+
+// Keyworder is the interface that provides a special MySQL query keyword
+// like DEFAULT or NULL
+//
+// Used for special cases where we really need special keyword not quoted
+type Keyworder interface {
+	Keyword() string
 }
 
 // Execer is the interface that wraps the Exec method.

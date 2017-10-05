@@ -9,11 +9,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -74,18 +73,21 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func assertVals(t *testing.T, s SelectBuilder, vals ...string) {
+func assertVals(t *testing.T, s SelectBuilder, expected ...string) {
 	rows, err := s.Query()
 	assert.NoError(t, err)
 	defer rows.Close()
 
-	var val string
-	for _, expected := range vals {
+	vals := make([]string, len(expected))
+	for i := range vals {
 		assert.True(t, rows.Next())
-		assert.NoError(t, rows.Scan(&val))
-		assert.Equal(t, expected, val)
+		assert.NoError(t, rows.Scan(&vals[i]))
 	}
 	assert.False(t, rows.Next())
+
+	if expected != nil {
+		assert.Equal(t, expected, vals)
+	}
 }
 
 func TestSimpleSelect(t *testing.T) {
@@ -99,11 +101,12 @@ func TestEq(t *testing.T) {
 	s := sqrl.Select("v").From("squirrel_integration")
 	assertVals(t, s.Where(Eq{"k": 4}), "baz")
 	assertVals(t, s.Where(NotEq{"k": 2}), "foo", "bar", "baz")
-	assertVals(t, s.Where(Eq{"k": []int{1,4}}), "foo", "baz")
-	assertVals(t, s.Where(NotEq{"k": []int{1,4}}), "bar", "foo")
+	assertVals(t, s.Where(Eq{"k": []int{1, 4}}), "foo", "baz")
+	assertVals(t, s.Where(NotEq{"k": []int{1, 4}}), "bar", "foo")
 	assertVals(t, s.Where(Eq{"k": nil}))
 	assertVals(t, s.Where(NotEq{"k": nil}), "foo", "bar", "foo", "baz")
 	assertVals(t, s.Where(Eq{"k": []int{}}))
+	assertVals(t, s.Where(NotEq{"k": []int{}}), "foo", "bar", "foo", "baz")
 }
 
 func TestIneq(t *testing.T) {
